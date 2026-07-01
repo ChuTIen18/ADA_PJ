@@ -9,7 +9,7 @@ export function renderChart(ctx, meta) {
         {
           label: "Mice Error Rate (%)",
           data: [meta.mice_avg_error_classic, meta.mice_avg_error_mixed],
-          backgroundColor: ["#e74c3c", "#27ae60"],
+          backgroundColor: ["#ff1900", "#57db8e"],
         },
       ],
     },
