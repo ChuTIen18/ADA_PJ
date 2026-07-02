@@ -1,6 +1,10 @@
 let myChart = null;
-export function renderChart(ctx, meta) {
-  if (myChart) myChart.destroy();
+
+export function initChart(ctx) {
+  if (myChart) {
+    myChart.destroy();
+  }
+
   myChart = new Chart(ctx, {
     type: "bar",
     data: {
@@ -8,19 +12,30 @@ export function renderChart(ctx, meta) {
       datasets: [
         {
           label: "Mice Error Rate (%)",
-          data: [meta.mice_avg_error_classic, meta.mice_avg_error_mixed],
+          data: [0, 0],
           backgroundColor: ["#ff1900", "#57db8e"],
         },
       ],
     },
     options: {
       responsive: true,
+      animation: { duration: 0 },
       plugins: {
         title: {
           display: true,
-          text: `Elephant phát hiện: ${meta.elephant_detected}`,
+          text: "Đang khởi tạo...",
         },
       },
     },
   });
+
+  return myChart;
+}
+
+export function updateChart(classicErr, mixedErr, elephantDetected) {
+  if (!myChart) return;
+
+  myChart.data.datasets[0].data = [classicErr, mixedErr];
+  myChart.options.plugins.title.text = `Elephant phát hiện: ${elephantDetected}`;
+  myChart.update("none");
 }

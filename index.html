@@ -15,7 +15,9 @@
         </button>
         <button id="btnReal" class="source-btn">Data Thực tế</button>
       </div>
-      <div id="modeNotification" class="notification-box">Đang xem : Data giả lập</div>
+      <div id="modeNotification" class="notification-box">
+        Đang xem : Data giả lập
+      </div>
 
       <div id="inputsContainer" class="input-section">
         <label>Số Elephant:</label><input type="number" id="nHot" value="5" />
@@ -26,6 +28,14 @@
     </div>
 
     <div id="result-area">
+      <div id="realtime-status-bar">
+        <div id="progress-wrapper">
+          <div id="progressBar"></div>
+        </div>
+        <p id="statusText">Trạng thái: Sẵn sàng</p>
+        <div id="interimStats"></div>
+      </div>
+
       <h2>Kết quả So sánh</h2>
       <div class="chart-container"><canvas id="myChart"></canvas></div>
       <table id="top10Table">
