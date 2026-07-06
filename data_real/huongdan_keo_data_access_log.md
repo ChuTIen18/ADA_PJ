@@ -6,16 +6,16 @@
 
 ## 1. Tổng quan Dataset
 
-| Thuộc tính | Chi tiết |
-|---|---|
-| **Tên** | NASA Kennedy Space Center HTTP Access Log |
-| **Nguồn gốc** | https://ita.ee.lbl.gov/html/contrib/NASA-HTTP.html |
-| **Kaggle** | https://www.kaggle.com/datasets/shawon10/web-log-dataset |
-| **File sử dụng** | `access.log` (~167 MB) |
-| **Tổng dòng** | 1,569,898 |
-| **Dòng parse được** | 1,566,461 (99.78%) |
-| **Dòng lỗi / bỏ qua** | 3,437 (0.22%) |
-| **Định dạng** | Apache Common Log Format (CLF) |
+| Thuộc tính            | Chi tiết                                                          |
+| --------------------- | ----------------------------------------------------------------- |
+| **Tên**               | NASA Kennedy Space Center HTTP Access Log                         |
+| **Nguồn gốc**         | https://ita.ee.lbl.gov/html/contrib/NASA-HTTP.html                |
+| **Kaggle**            | https://www.kaggle.com/datasets/adchatakora/nasa-http-access-logs |
+| **File sử dụng**      | `access.log` (~167 MB)                                            |
+| **Tổng dòng**         | 1,569,898                                                         |
+| **Dòng parse được**   | 1,566,461 (99.78%)                                                |
+| **Dòng lỗi / bỏ qua** | 3,437 (0.22%)                                                     |
+| **Định dạng**         | Apache Common Log Format (CLF)                                    |
 
 ---
 
@@ -29,17 +29,17 @@ in24.inetnebr.com - - [01/Aug/1995:00:00:01 -0400] "GET /shuttle/missions/sts-68
 
 ### 2.2 Bảng phân tích từng trường
 
-| # | Trường | Ví dụ | Kiểu dữ liệu gốc (trong file) | Kiểu logic (khi parse / lưu DB) | Mô tả |
-|---|---|---|---|---|---|
-| 1 | **Host / IP** | `in24.inetnebr.com` | String (plain text) | `VARCHAR` / `INET` / **String** | Hostname hoặc địa chỉ IPv4 của client gửi request |
-| 2 | **RFC 1413 Identity** | `-` | String | `VARCHAR` (thường `NULL`) | Định danh client theo RFC 1413. Hầu như luôn là `-` (không xác định) |
-| 3 | **Username** | `-` | String | `VARCHAR` (thường `NULL`) | User ID nếu có HTTP Basic Auth. Hầu như luôn là `-` |
-| 4 | **Timestamp** | `[01/Aug/1995:00:00:01 -0400]` | String (formatted) | `DATETIME` / `TIMESTAMP WITH TZ` | Thời điểm server nhận request. Format: `[dd/Mon/yyyy:HH:mm:ss ±zzzz]` |
-| 5 | **HTTP Method** | `GET` | String | `ENUM` / `VARCHAR(10)` | Phương thức HTTP: `GET`, `POST`, `HEAD`, `PUT`, `DELETE`... |
-| 6 | **Request URL** | `/shuttle/.../sts-68-mcc-05.txt` | String | `TEXT` / `VARCHAR(2048)` | Đường dẫn tài nguyên được yêu cầu |
-| 7 | **HTTP Version** | `HTTP/1.0` | String | `ENUM` / `VARCHAR(10)` | Phiên bản giao thức HTTP (`HTTP/1.0` hoặc `HTTP/1.1`) |
-| 8 | **Status Code** | `200` | String (chữ số) | **Integer** (`SMALLINT`) | Mã phản hồi HTTP. Giá trị từ 100–599. Cần ép kiểu `int()` khi parse |
-| 9 | **Response Size** | `1839` | String (chữ số hoặc `-`) | **Integer** (`BIGINT`) hoặc `NULL` | Kích thước phản hồi (bytes). ⚠️ Có thể là `-` khi không có body → cần xử lý thành `0` hoặc `NULL` |
+| #   | Trường                | Ví dụ                            | Kiểu dữ liệu gốc (trong file) | Kiểu logic (khi parse / lưu DB)    | Mô tả                                                                                             |
+| --- | --------------------- | -------------------------------- | ----------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | **Host / IP**         | `in24.inetnebr.com`              | String (plain text)           | `VARCHAR` / `INET` / **String**    | Hostname hoặc địa chỉ IPv4 của client gửi request                                                 |
+| 2   | **RFC 1413 Identity** | `-`                              | String                        | `VARCHAR` (thường `NULL`)          | Định danh client theo RFC 1413. Hầu như luôn là `-` (không xác định)                              |
+| 3   | **Username**          | `-`                              | String                        | `VARCHAR` (thường `NULL`)          | User ID nếu có HTTP Basic Auth. Hầu như luôn là `-`                                               |
+| 4   | **Timestamp**         | `[01/Aug/1995:00:00:01 -0400]`   | String (formatted)            | `DATETIME` / `TIMESTAMP WITH TZ`   | Thời điểm server nhận request. Format: `[dd/Mon/yyyy:HH:mm:ss ±zzzz]`                             |
+| 5   | **HTTP Method**       | `GET`                            | String                        | `ENUM` / `VARCHAR(10)`             | Phương thức HTTP: `GET`, `POST`, `HEAD`, `PUT`, `DELETE`...                                       |
+| 6   | **Request URL**       | `/shuttle/.../sts-68-mcc-05.txt` | String                        | `TEXT` / `VARCHAR(2048)`           | Đường dẫn tài nguyên được yêu cầu                                                                 |
+| 7   | **HTTP Version**      | `HTTP/1.0`                       | String                        | `ENUM` / `VARCHAR(10)`             | Phiên bản giao thức HTTP (`HTTP/1.0` hoặc `HTTP/1.1`)                                             |
+| 8   | **Status Code**       | `200`                            | String (chữ số)               | **Integer** (`SMALLINT`)           | Mã phản hồi HTTP. Giá trị từ 100–599. Cần ép kiểu `int()` khi parse                               |
+| 9   | **Response Size**     | `1839`                           | String (chữ số hoặc `-`)      | **Integer** (`BIGINT`) hoặc `NULL` | Kích thước phản hồi (bytes). ⚠️ Có thể là `-` khi không có body → cần xử lý thành `0` hoặc `NULL` |
 
 > [!IMPORTANT]
 > Trong file text, **mọi trường đều được lưu dưới dạng chuỗi ký tự (String)**. Các trường như Status Code và Response Size cần được **ép kiểu thủ công** khi parse bằng code.
@@ -56,16 +56,16 @@ pattern = r'^(\S+) \S+ \S+ \[.*?\] "(\S+) (\S+) \S+" (\d+) (\S+)'
 
 ### 3.2 Bảng ánh xạ nhóm capture
 
-| Nhóm | Regex | Trường trích xuất | Ép kiểu | Ghi chú |
-|---|---|---|---|---|
-| `group(1)` | `(\S+)` — đầu dòng | **Host / IP** | Giữ nguyên `str` | Có thể là hostname (`edams.ksc.nasa.gov`) hoặc IP (`163.206.89.4`) |
-| — | `\S+ \S+` | RFC 1413 + Username | Bỏ qua | Hầu như luôn là `- -`, không cần thiết cho CMS |
-| — | `\[.*?\]` | Timestamp | Bỏ qua | Có thể parse thêm nếu cần phân tích theo thời gian |
-| `group(2)` | `(\S+)` — trong dấu `"` | **HTTP Method** | Giữ nguyên `str` | `GET`, `POST`, `HEAD`... |
-| `group(3)` | `(\S+)` — trong dấu `"` | **Request URL** | Giữ nguyên `str` | Đường dẫn tài nguyên |
-| — | `\S+` — cuối dấu `"` | HTTP Version | Bỏ qua | `HTTP/1.0` hoặc `HTTP/1.1` |
-| `group(4)` | `(\d+)` | **Status Code** | `int()` | Mã HTTP: 200, 304, 404... |
-| `group(5)` | `(\S+)` | **Response Size** | `int()` hoặc `0` | ⚠️ Có thể là `-` → cần xử lý đặc biệt |
+| Nhóm       | Regex                   | Trường trích xuất   | Ép kiểu          | Ghi chú                                                            |
+| ---------- | ----------------------- | ------------------- | ---------------- | ------------------------------------------------------------------ |
+| `group(1)` | `(\S+)` — đầu dòng      | **Host / IP**       | Giữ nguyên `str` | Có thể là hostname (`edams.ksc.nasa.gov`) hoặc IP (`163.206.89.4`) |
+| —          | `\S+ \S+`               | RFC 1413 + Username | Bỏ qua           | Hầu như luôn là `- -`, không cần thiết cho CMS                     |
+| —          | `\[.*?\]`               | Timestamp           | Bỏ qua           | Có thể parse thêm nếu cần phân tích theo thời gian                 |
+| `group(2)` | `(\S+)` — trong dấu `"` | **HTTP Method**     | Giữ nguyên `str` | `GET`, `POST`, `HEAD`...                                           |
+| `group(3)` | `(\S+)` — trong dấu `"` | **Request URL**     | Giữ nguyên `str` | Đường dẫn tài nguyên                                               |
+| —          | `\S+` — cuối dấu `"`    | HTTP Version        | Bỏ qua           | `HTTP/1.0` hoặc `HTTP/1.1`                                         |
+| `group(4)` | `(\d+)`                 | **Status Code**     | `int()`          | Mã HTTP: 200, 304, 404...                                          |
+| `group(5)` | `(\S+)`                 | **Response Size**   | `int()` hoặc `0` | ⚠️ Có thể là `-` → cần xử lý đặc biệt                              |
 
 ### 3.3 Code parse hoàn chỉnh (trích từ `analyze_nasa_log.py`)
 
@@ -90,6 +90,7 @@ def parse_log_line(line):
 > Script hiện tại chỉ trích xuất 4 trường (`ip`, `method`, `url`, `status`).
 > Trường `response_size` (group 5) đã được capture bởi regex nhưng chưa đưa vào dict.
 > Nếu báo cáo cần phân tích kích thước, có thể thêm:
+>
 > ```python
 > "size": int(m.group(5)) if m.group(5) != '-' else 0
 > ```
@@ -151,13 +152,13 @@ true_counts = dict(ip_counts)    # chuyển sang dict chuẩn
 
 Kết quả thống kê từ `access.log`:
 
-| Chỉ số | Giá trị |
-|---|---|
-| Tổng IP phân biệt | 74,957 |
+| Chỉ số                  | Giá trị                          |
+| ----------------------- | -------------------------------- |
+| Tổng IP phân biệt       | 74,957                           |
 | IP xuất hiện nhiều nhất | 6,516 lần (`edams.ksc.nasa.gov`) |
-| IP xuất hiện ít nhất | 1 lần |
-| Trung bình mỗi IP | 20.9 lần |
-| Beta Zipf (IP) | 1.042 (phân phối Zipf điển hình) |
+| IP xuất hiện ít nhất    | 1 lần                            |
+| Trung bình mỗi IP       | 20.9 lần                         |
+| Beta Zipf (IP)          | 1.042 (phân phối Zipf điển hình) |
 
 #### Bước 3 — Tạo stream
 
@@ -179,11 +180,11 @@ elephant_ips = set(ip for ip, _ in sorted_ips[:n_hot])
 
 Kết quả phân nhóm (với ngưỡng trung bình = 21 requests):
 
-| Nhóm | Số IP | Tổng requests | % traffic |
-|---|---|---|---|
-| **Hot (Elephant)** | 16,671 | 1,098,867 | 70.1% |
-| **Cold (Mice)** | 58,286 | 467,594 | 29.9% |
-| **Gap factor** | — | — | 8.2× |
+| Nhóm               | Số IP  | Tổng requests | % traffic |
+| ------------------ | ------ | ------------- | --------- |
+| **Hot (Elephant)** | 16,671 | 1,098,867     | 70.1%     |
+| **Cold (Mice)**    | 58,286 | 467,594       | 29.9%     |
+| **Gap factor**     | —      | —             | 8.2×      |
 
 #### Bước 5 — Output chuẩn (cùng interface với data giả lập)
 
@@ -251,14 +252,14 @@ flowchart LR
 
 ### 5.3 Ánh xạ data → Response fields
 
-| Dữ liệu từ `access.log` | Cách tính | Response field (API) | Kiểu |
-|---|---|---|---|
-| `len(elephant_ips)` | Số IP trong tập hot | `elephant_total` | `integer` |
-| Top-k CMS ∩ elephant_ips | Đếm đúng | `elephant_detected` | `integer` |
-| `(estimate - true) / true` | Trung bình trên Mice | `mice_avg_error` | `float` |
-| Top 10 IP theo CMS estimate | Sort + slice | `top10[]` | `array` |
-| `hot_threshold_percent` | Tham số cấu hình | `real_meta.hot_threshold_percent` | `float` |
-| `len(ip_counts)` = 74,957 | Đếm IP duy nhất | `real_meta.total_unique_ips` | `integer` |
+| Dữ liệu từ `access.log`     | Cách tính            | Response field (API)              | Kiểu      |
+| --------------------------- | -------------------- | --------------------------------- | --------- |
+| `len(elephant_ips)`         | Số IP trong tập hot  | `elephant_total`                  | `integer` |
+| Top-k CMS ∩ elephant_ips    | Đếm đúng             | `elephant_detected`               | `integer` |
+| `(estimate - true) / true`  | Trung bình trên Mice | `mice_avg_error`                  | `float`   |
+| Top 10 IP theo CMS estimate | Sort + slice         | `top10[]`                         | `array`   |
+| `hot_threshold_percent`     | Tham số cấu hình     | `real_meta.hot_threshold_percent` | `float`   |
+| `len(ip_counts)` = 74,957   | Đếm IP duy nhất      | `real_meta.total_unique_ips`      | `integer` |
 
 ### 5.4 Response mẫu kỳ vọng (data thực)
 
@@ -297,6 +298,7 @@ flowchart LR
 ### 6.1 Dòng log không parse được (3,437 dòng)
 
 Nguyên nhân phổ biến:
+
 - Request line bị cắt hoặc không đúng format: `"GET"` thiếu URL
 - Ký tự đặc biệt hoặc encoding lỗi
 - Dòng trống hoặc dòng metadata của server
@@ -316,6 +318,7 @@ size = int(size_str) if size_str != '-' else 0
 ### 6.3 Host là hostname vs IP
 
 Trong `access.log`, trường Host có thể là:
+
 - **Hostname:** `edams.ksc.nasa.gov`, `piweba4y.prodigy.com`
 - **Địa chỉ IP:** `163.206.89.4`, `202.249.77.5`
 
@@ -327,22 +330,22 @@ Trong `access.log`, trường Host có thể là:
 
 ### 7.1 Đặc điểm phân phối
 
-| Chỉ số | Giá trị | Ý nghĩa cho CMS |
-|---|---|---|
-| **Beta Zipf (IP)** | 1.042 | Phân phối Zipf điển hình — khớp Section 3.3 bài báo |
-| **Beta Zipf (URL)** | 1.671 | Skew mạnh hơn — ít URL chiếm rất nhiều traffic |
-| **Top 1% IP** | 749 IPs chiếm 24.7% traffic | Elephant flows tồn tại rõ ràng |
-| **Gap factor** | 8.2× | Hot IP truy cập trung bình gấp 8.2 lần Cold IP |
+| Chỉ số              | Giá trị                     | Ý nghĩa cho CMS                                     |
+| ------------------- | --------------------------- | --------------------------------------------------- |
+| **Beta Zipf (IP)**  | 1.042                       | Phân phối Zipf điển hình — khớp Section 3.3 bài báo |
+| **Beta Zipf (URL)** | 1.671                       | Skew mạnh hơn — ít URL chiếm rất nhiều traffic      |
+| **Top 1% IP**       | 749 IPs chiếm 24.7% traffic | Elephant flows tồn tại rõ ràng                      |
+| **Gap factor**      | 8.2×                        | Hot IP truy cập trung bình gấp 8.2 lần Cold IP      |
 
 ### 7.2 Phân vị tần suất IP
 
-| Phân vị | Số requests | Diễn giải |
-|---|---|---|
-| P50 (median) | 9 | Một nửa số IP truy cập ≤ 9 lần |
-| P90 | 37 | 90% IP truy cập ≤ 37 lần |
-| P99 | 190 | Chỉ 1% IP truy cập > 190 lần |
-| P99.9 | 825 | Top 0.1% IP truy cập > 825 lần |
-| Max | 6,516 | IP nhiều nhất: `edams.ksc.nasa.gov` |
+| Phân vị      | Số requests | Diễn giải                           |
+| ------------ | ----------- | ----------------------------------- |
+| P50 (median) | 9           | Một nửa số IP truy cập ≤ 9 lần      |
+| P90          | 37          | 90% IP truy cập ≤ 37 lần            |
+| P99          | 190         | Chỉ 1% IP truy cập > 190 lần        |
+| P99.9        | 825         | Top 0.1% IP truy cập > 825 lần      |
+| Max          | 6,516       | IP nhiều nhất: `edams.ksc.nasa.gov` |
 
 ### 7.3 Tại sao chọn NASA log cho báo cáo CMS?
 
@@ -355,12 +358,12 @@ Trong `access.log`, trường Host có thể là:
 
 ## 8. Tham số CMS gợi ý cho data thực
 
-| Tham số | Giá trị gợi ý | Lý do |
-|---|---|---|
-| `table_size` (n) | 5,000 | λ = 74,957 / 5,000 ≈ 15 → supercritical, thách thức CMS |
-| `k` (classic) | 3 | Giá trị chuẩn trong bài báo |
-| `k_hot` / `k_cold` (mixed) | 2 / 5 | Mixed CMS: ít hash cho hot, nhiều hash cho cold |
-| `hot_threshold_percent` | 0.05 (5%) | Top 5% IP = Elephant, 95% còn lại = Mice |
+| Tham số                    | Giá trị gợi ý | Lý do                                                   |
+| -------------------------- | ------------- | ------------------------------------------------------- |
+| `table_size` (n)           | 5,000         | λ = 74,957 / 5,000 ≈ 15 → supercritical, thách thức CMS |
+| `k` (classic)              | 3             | Giá trị chuẩn trong bài báo                             |
+| `k_hot` / `k_cold` (mixed) | 2 / 5         | Mixed CMS: ít hash cho hot, nhiều hash cho cold         |
+| `hot_threshold_percent`    | 0.05 (5%)     | Top 5% IP = Elephant, 95% còn lại = Mice                |
 
 ---
 
@@ -370,4 +373,4 @@ Trong `access.log`, trường Host có thể là:
 - **API Contract:** `API_contract.md` — định nghĩa request/response cho endpoint `/api/simulate`
 - **Hướng dẫn xây dựng data:** `huongdan_xaydung_data.md` — bao gồm cả data giả lập và data thực
 - **Pipeline tổng quát:** `data_pipeline_Thinh.md` — luồng từ kéo data đến vẽ đồ thị
-- **Bài báo gốc:** Fusy, É., & Kucherov, G. (2023). *Count-min sketch with variable number of hash functions.*
+- **Bài báo gốc:** Fusy, É., & Kucherov, G. (2023). _Count-min sketch with variable number of hash functions._
