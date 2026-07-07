@@ -325,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================
-  // 💥 ĐÃ TÍCH HỢP: KHỚP NỐI ĐIỀU HƯỚNG TAB & PIPELINE DATA THỰC TẾ
+  // TÍCH HỢP: KHỚP NỐI ĐIỀU HƯỚNG TAB & PIPELINE DATA THỰC TẾ
   // ==========================================
 
   function initDatasetNavigation() {

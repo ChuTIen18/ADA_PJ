@@ -151,14 +151,14 @@
       },
     },
 
-    // 2. DATA THỰC TẾ (REAL DATASET) - KỊCH BẢN BƯỚC 3 (Khớp cấu hình hình ảnh 5.4)
+    // 2. DATA THỰC TẾ (REAL DATASET) - KỊCH BẢN BƯỚC 3
     real: {
       classic: {
         data_source: "real",
         algorithm: "classic",
         elephant_detected: 4,
         elephant_total: 6,
-        mice_avg_error: 0.31, // Khớp chính xác 0.31 ở ảnh 5.4 của bạn
+        mice_avg_error: 0.31,
         real_meta: {
           hot_threshold_percent: 0.05,
           total_unique_ips: 74957,
@@ -292,13 +292,9 @@
   };
 })();
 // ==========================================
-// 1. DATA GIẢ LẬP CHO TAB VISUALIZER (Cũ của bồ)
+// 1. DATA GIẢ LẬP CHO TAB VISUALIZER
 // ==========================================
-const mockVisualizerInitialData = [
-  "1.1.1.1",
-  "10.0.0.5",
-  "172.16.0.3", // ...đống IP cũ bồ đang chạy
-];
+const mockVisualizerInitialData = ["1.1.1.1", "10.0.0.5", "172.16.0.3"];
 
 // ==========================================
 // 2. DATA GIẢ LẬP CHO TAB ANALYTICS (Nhét thêm vào đây)
@@ -306,9 +302,9 @@ const mockVisualizerInitialData = [
 const mockRealAnalyticsData = {
   data_source: "real",
   algorithm: "classic",
-  elephant_detected: 5, // Bắt trúng 5/5 Voi như kịch bản nói nhé
+  elephant_detected: 5, // Bắt trúng 5/5 Voi như kịch bản demo
   elephant_total: 5,
-  mice_avg_error: 12.5, // Sai số 12.5% cho Mixed CMS luôn
+  mice_avg_error: 12.5,
   real_meta: {
     hot_threshold_percent: 0.05,
     total_unique_ips: 74957,
