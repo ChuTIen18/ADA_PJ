@@ -1,93 +1,82 @@
 """
-Pydantic response models cho POST /api/simulate
-Map 1-1 với bảng Response trong API_contract.md
+backend/app/schemas/response_models.py
+Sở hữu: C (Hiếu)
+Khớp 100% với rules.md §3.3 (presets), §3.4 (simulate response), §3.5 (error).
 """
 
-from typing import List, Optional
-
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
+# ---------------------------------------------------------------------------
+# GET /api/presets  (rules.md §3.3)
+# ---------------------------------------------------------------------------
+
+class PresetParams(BaseModel):
+    n_hot: int
+    n_cold: int
+    gap_factor: float
+    table_size: int
+    total_packets: int
+
+
+class PresetItem(BaseModel):
+    id: Literal["main", "paper_faithful", "stress"]
+    label: str
+    params: PresetParams
+
+
+class PresetsResponse(BaseModel):
+    presets: list[PresetItem]
+
+
+# ---------------------------------------------------------------------------
+# POST /api/simulate  (rules.md §3.4)
+# ---------------------------------------------------------------------------
+
 class Top10Item(BaseModel):
-    ip: str = Field(..., description="Địa chỉ IP")
-    true_count: int = Field(..., description="Số lần xuất hiện thực tế")
-    estimate: int = Field(..., description="Số lần ước tính bởi CMS")
-    is_elephant: bool = Field(..., description="IP này có phải Elephant không")
+    ip: str = Field(..., description="Định danh phần tử (IP hoặc hostname với data thật)")
+    true_count: int = Field(..., description="Đếm thật từ Counter trên chính stream đã sinh, không suy lý thuyết")
+    estimate: int = Field(..., description="Giá trị CMS trả về khi query")
+    is_hot: bool = Field(..., description="Field chuẩn DUY NHẤT — không dùng is_elephant trong code/schema")
 
 
-class RealMeta(BaseModel):
-    """
-    Chỉ có giá trị khi data_source == "real".
-    Khi data_source == "synthetic", cả object này là None.
-    """
+class AlgorithmResult(BaseModel):
+    # classic dùng "k"; mixed dùng "k_hot"/"k_cold" — để None field không dùng tới
+    k: Optional[int] = Field(None, description="Chỉ có ở kết quả classic")
+    k_hot: Optional[int] = Field(None, description="Chỉ có ở kết quả mixed")
+    k_cold: Optional[int] = Field(None, description="Chỉ có ở kết quả mixed")
 
-    hot_threshold_percent: float = Field(
-        ..., description="Ngưỡng % để xác định Elephant (VD: 0.05 = top 5%)"
-    )
-    total_unique_ips: int = Field(
-        ..., description="Tổng số IP duy nhất trong dataset thực tế"
-    )
+    elephant_detected: int = Field(..., description="Số hot IP thực sự nằm trong top-N ước lượng cao nhất")
+    elephant_total: int = Field(..., description="N = elephant_total (thường = tổng số hot thật)")
+    mice_avg_error: float = Field(..., description="relative_error trung bình, tính RIÊNG trên nhóm cold/mice")
+    top10: list[Top10Item] = Field(..., description="Toàn bộ hot + một số cold đại diện, cùng tập IP giữa classic/mixed")
+
+
+class SimulationResults(BaseModel):
+    classic: AlgorithmResult
+    mixed: AlgorithmResult
 
 
 class SimulationResponse(BaseModel):
-    data_source: str = Field(..., description='"synthetic" hoặc "real"')
-    algorithm: str = Field(..., description='"classic" hoặc "mixed"')
-    elephant_detected: int = Field(
-        ..., description="Số Elephant IP phát hiện đúng (nằm trong top estimate)"
-    )
-    elephant_total: int = Field(..., description="Tổng số Elephant IP thực tế")
-    mice_avg_error: float = Field(
-        ...,
-        description=(
-            "Lỗi ước tính trung bình của Mice IP (0.12 = 12%). "
-            "Chỉ tính trên is_elephant=false: mean((estimate - true_count) / true_count)"
-        ),
-    )
-    top10: List[Top10Item] = Field(
-        ..., description="Danh sách 10 IP có estimate cao nhất"
-    )
-    real_meta: Optional[RealMeta] = Field(
-        default=None,
-        description='Chỉ có giá trị khi data_source="real", còn lại là null',
-    )
+    run_id: str
+    data_source: Literal["synthetic", "real"]
+    seed: int = Field(..., description="Seed thực tế đã dùng (để tái lập), kể cả khi request không truyền")
+    params_used: dict = Field(..., description="Toàn bộ tham số thực tế đã dùng, kể cả default đã áp")
+    results: SimulationResults
 
-    class Config:
-        json_schema_extra = {
-            "examples": [
-                {
-                    "data_source": "synthetic",
-                    "algorithm": "mixed",
-                    "elephant_detected": 5,
-                    "elephant_total": 5,
-                    "mice_avg_error": 0.12,
-                    "real_meta": None,
-                    "top10": [
-                        {
-                            "ip": "10.0.0.1",
-                            "true_count": 95283,
-                            "estimate": 96100,
-                            "is_elephant": True,
-                        }
-                    ],
-                },
-                {
-                    "data_source": "real",
-                    "algorithm": "classic",
-                    "elephant_detected": 4,
-                    "elephant_total": 6,
-                    "mice_avg_error": 0.31,
-                    "real_meta": {
-                        "hot_threshold_percent": 0.05,
-                        "total_unique_ips": 12483,
-                    },
-                    "top10": [
-                        {
-                            "ip": "203.0.113.5",
-                            "true_count": 48201,
-                            "estimate": 61500,
-                            "is_elephant": True,
-                        }
-                    ],
-                },
-            ]
-        }
+
+# ---------------------------------------------------------------------------
+# Response lỗi — khuôn chung (rules.md §3.5)
+# ---------------------------------------------------------------------------
+
+ErrorCode = Literal["INVALID_PARAMS", "DATASET_NOT_FOUND", "TABLE_TOO_SMALL_FOR_K", "INTERNAL_ERROR"]
+
+
+class ErrorDetail(BaseModel):
+    code: ErrorCode
+    message: str
+
+
+class ErrorResponse(BaseModel):
+    error: ErrorDetail
