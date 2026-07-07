@@ -1,69 +1,50 @@
-/**
- * api.js — wrapper DUY NHẤT gọi backend.
- * Do [C] Hiếu viết theo API_contract.md. [B] Mai chỉ import và gọi hàm
- * simulate(), KHÔNG tự viết fetch logic trong app.js.
- *
- * Khi backend chưa chạy / cần dev offline: đổi import trong app.js từ
- *   import { simulate } from "./api.js";
- * sang
- *   import { simulate } from "./mock_data.js";
- 
+// frontend/js/api.js
+// Sở hữu: C (Hiếu) — dù nằm trong frontend/js/, KHÔNG do B (Mai) viết,
+// vì C là người hiểu rõ nhất schema request/response đã chốt (rules.md §3.4).
+// B chỉ gọi callSimulate()/fetchPresets(), không tự viết fetch() trong app.js.
 
-const BASE_URL = "http://localhost:8000";
+const API_BASE = "http://localhost:8000/api"; // đổi qua config nếu deploy khác
 
 /**
- * Gọi POST /api/simulate
- * @param {Object} payload - xem schema Request trong API_contract.md
- * @param {"classic"|"mixed"} payload.algorithm
- * @param {"synthetic"|"real"} payload.data_source
- * @param {number} payload.table_size
- * @param {number} [payload.n_hot]
- * @param {number} [payload.n_cold]
- * @param {number} [payload.gap_factor]
- * @param {number} [payload.total_packets]
- * @returns {Promise<Object>} response JSON đúng schema SimulationResponse
- * @throws {Error} nếu response không phải 2xx (bao gồm 422, 500)
+ * Gọi GET /api/presets — lấy 3 bộ tham số mẫu (main / paper_faithful / stress).
+ * @returns {Promise<Object>} { presets: [{ id, label, params }, ...] }
  */
-export async function simulate(payload) {
-  let res;
-  try {
-    res = await fetch(`${BASE_URL}/api/simulate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (networkErr) {
-    // Thường gặp: backend chưa chạy, hoặc lỗi CORS bị browser chặn im lặng
-    throw new Error(
-      `Không gọi được backend tại ${BASE_URL}. ` +
-        `Kiểm tra: (1) uvicorn đã chạy port 8000 chưa, (2) CORS đã bật trong main.py chưa. ` +
-        `Chi tiết: ${networkErr.message}`
-    );
+async function fetchPresets() {
+  const response = await fetch(`${API_BASE}/presets`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data?.error?.message || `fetchPresets failed: HTTP ${response.status}`);
   }
 
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const errBody = await res.json();
-      detail = JSON.stringify(errBody.detail ?? errBody);
-    } catch {
-      // response không phải JSON, bỏ qua
-    }
-    throw new Error(`HTTP ${res.status} từ /api/simulate. ${detail}`);
-  }
-
-  return res.json();
+  return data;
 }
 
 /**
- * Kiểm tra nhanh backend có sống không (dùng để debug CORS/port khi demo).
- * @returns {Promise<boolean>}
+ * Gọi POST /api/simulate — MỘT request duy nhất trả về kết quả CẢ classic
+ * lẫn mixed cùng lúc, chạy trên cùng 1 stream/seed (rules.md §3.4).
+ * app.js (B) gọi hàm này đúng 1 lần rồi cache lại, không gọi lại khi chỉ
+ * chuyển panel hiển thị classic/mixed/so-sánh.
+ * @param {Object} payload - khớp schema SimulationRequest (rules.md §3.4)
+ * @returns {Promise<Object>} khớp schema SimulationResponse
  */
-export async function checkHealth() {
-  try {
-    const res = await fetch(`${BASE_URL}/health`);
-    return res.ok;
-  } catch {
-    return false;
+async function callSimulate(payload) {
+  const response = await fetch(`${API_BASE}/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  // Khuôn lỗi chuẩn hoá: { error: { code, message } } — rules.md §3.5
+  if (!response.ok || data.error) {
+    throw new Error(data?.error?.message || `callSimulate failed: HTTP ${response.status}`);
   }
+
+  return data;
 }
