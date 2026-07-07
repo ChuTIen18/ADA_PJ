@@ -1,8 +1,11 @@
-// Core Interactive Controller App Logic - Guaranteed 4-Bar Presentation Evaluation
+// Core Interactive Controller App Logic - Lớp điều khiển giao diện chính Demo CMS/CCMS
+
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Cấu hình cấu trúc ma trận băm (4 hàng x 10 cột)
   const ROWS = 4;
   const COLS = 10;
 
+  // Khởi tạo mảng lưu trữ dữ liệu bộ đếm cho 2 thuật toán về 0
   let cmsStorage = Array(ROWS)
     .fill()
     .map(() => Array(COLS).fill(0));
@@ -14,15 +17,16 @@ document.addEventListener("DOMContentLoaded", () => {
   let sessionTrueCounts = {};
   let comparisonChart = null;
 
+  // Bộ dữ liệu IP mẫu phục vụ cho tính năng Auto Run Stream
   const mockIPPool = [
-    "192.168.1.10", // Elephant Flow (Tần suất xuất hiện cao vượt trội)
-    "10.0.0.5", // Mice Flow 1
     "192.168.1.10",
-    "1.1.1.1", // Mice Flow 2
+    "10.0.0.5",
     "192.168.1.10",
-    "172.16.0.3", // Mice Flow 3
-    "8.8.8.8", // Mice Flow 4
-    "192.168.1.50", // Mice Flow 5
+    "1.1.1.1",
+    "192.168.1.10",
+    "172.16.0.3",
+    "8.8.8.8",
+    "192.168.1.50",
     "10.0.0.5",
     "192.168.1.10",
   ];
@@ -30,37 +34,37 @@ document.addEventListener("DOMContentLoaded", () => {
   let streamInterval = null;
   let poolIndex = 0;
 
-  // Khởi tạo giao diện ban đầu
+  // Khởi tạo trạng thái giao diện ban đầu
   initMatrixUI("cmsMatrix", "cms");
   initMatrixUI("ccmsMatrix", "ccms");
   initChartUI();
 
   clearStreamContainer();
-  prepopulateVisualizerInitialData();
-  initDatasetNavigation(); // Kích hoạt bộ lắng nghe chuyển đổi Tab và Dataset
+  prepopulateVisualizerInitialData(); // Đưa toàn bộ hệ thống ban đầu về số 0
+  initDatasetNavigation(); // Kích hoạt bộ điều hướng chuyển đổi Tab 2 chiều
 
-  // Lắng nghe sự thay đổi nút Auto Run
+  /**
+   * Lắng nghe sự thay đổi của nút Switch "Auto Run Stream"
+   */
   document.getElementById("autoRunStream").addEventListener("change", (e) => {
     if (e.target.checked) {
-      // 1. MỖI KHI AUTO CHẠY: Đưa toàn bộ các cột biểu đồ về 0 ngay lập tức
+      // Khi bật Auto: Reset biểu đồ sai số nhỏ ở Tab 1 về 0 để đo đếm lại
       updateChartData([0, 0, 0, 0]);
-
-      // Xóa sạch dữ liệu phiên cũ để đo đếm lại từ đầu
       sessionTrueCounts = {};
       clearStreamContainer();
-
-      // Khôi phục lưới dữ liệu nhiễu nền ban đầu
       prepopulateVisualizerInitialData();
-
       startAutoStream();
     } else {
-      // 2. KHI NGỪNG AUTO: Tính toán kết quả sai số tích lũy và đẩy lên biểu đồ
+      // Khi tắt Auto: Dừng luồng và tính toán sai số tích lũy hiển thị lên biểu đồ nhỏ
       stopAutoStream();
       const metrics = calculateSessionMetrics();
       updateChartData(metrics);
     }
   });
 
+  /**
+   * Lắng nghe sự kiện click nút "Query" nạp IP thủ công
+   */
   document.getElementById("btnQuery").addEventListener("click", () => {
     const ip = document.getElementById("ipInput").value.trim();
     if (ip.length > 0) {
@@ -70,8 +74,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /**
+   * Tạo lưới ô vuông ma trận trên giao diện HTML
+   */
   function initMatrixUI(containerId, prefix) {
     const target = document.getElementById(containerId);
+    if (!target) return;
     target.innerHTML = "";
     for (let r = 0; r < ROWS; r++) {
       const rowDiv = document.createElement("div");
@@ -87,6 +95,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * Dọn sạch khung danh sách dòng gói tin (Data Stream) bên trái
+   */
   function clearStreamContainer() {
     const container = document.getElementById("streamContainer");
     if (!container) return;
@@ -97,6 +108,9 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
   }
 
+  /**
+   * Thêm một gói tin IP mới chạy vào khung cuộn Data Stream
+   */
   function appendIpToStreamUI(ip) {
     const container = document.getElementById("streamContainer");
     if (!container) return;
@@ -114,7 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
     container.scrollTop = container.scrollHeight;
   }
 
-  // Entropy Hash Generator
+  /**
+   * Hàm băm mô phỏng (Entropy Hash Generator) tính toán ra các vị trí cột tương ứng từng hàng
+   */
   function getHashColumns(ipValue) {
     let cols = [];
     const rowPrimes = [31, 67, 101, 139];
@@ -129,9 +145,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return cols;
   }
 
+  /**
+   * Xử lý nạp gói tin song song vào cả 2 mô hình thuật toán CMS và CCMS
+   */
   function processPacketInsertion(ip) {
     const targetCols = getHashColumns(ip);
 
+    // Cập nhật thanh thông tin Hash Columns ở trên cùng
     const infoIpEl = document.getElementById("infoIp");
     const infoHashesEl = document.getElementById("infoHashes");
     if (infoIpEl) infoIpEl.innerText = ip;
@@ -139,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     clearGridHighlights();
 
-    // CMS Insertion Logic
+    // ─── THUẬT TOÁN 1: COUNT-MIN SKETCH (CMS) TRUYỀN THỐNG ───
     let cmsQueryVals = [];
     for (let r = 0; r < ROWS; r++) {
       const colIdx = targetCols[r];
@@ -154,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cmsQueryEl = document.getElementById("cmsQueryValue");
     if (cmsQueryEl) cmsQueryEl.innerText = cmsQueryVals.join(" - ");
 
-    // CCMS Insertion Logic
+    // ─── THUẬT TOÁN 2: CONSERVATIVE CMS (CCMS) CẢI TIẾN ───
     let ccmsQueryVals = [];
     let currentMin = Number.MAX_SAFE_INTEGER;
     for (let r = 0; r < ROWS; r++) {
@@ -176,9 +196,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const ccmsQueryEl = document.getElementById("ccmsQueryValue");
     if (ccmsQueryEl) ccmsQueryEl.innerText = ccmsQueryVals.join(" - ");
+
     updateTotalSummariesCounters();
   }
 
+  /**
+   * Cập nhật chỉ số tổng lượng tích lũy và lượng lỗi giảm thiểu được ở cuối chân bảng ma trận
+   */
   function updateTotalSummariesCounters() {
     let sumCms = 0,
       sumCcms = 0;
@@ -198,6 +222,9 @@ document.addEventListener("DOMContentLoaded", () => {
       diffTextEl.innerText = `Tránh được va chạm, giảm ${sumCms - sumCcms} đơn vị lỗi tích lũy.`;
   }
 
+  /**
+   * Xóa các màu nền highlight xanh dương/xanh lá của lượt chèn gói tin cũ trước đó
+   */
   function clearGridHighlights() {
     document.querySelectorAll(".matrix-cell").forEach((el) => {
       el.classList.remove("highlight-cms", "highlight-ccms");
@@ -208,10 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
     streamInterval = setInterval(() => {
       const currentIp = mockIPPool[poolIndex];
       appendIpToStreamUI(currentIp);
-
-      // Ghi nhận tần suất xuất hiện thực tế của IP trong phiên này
       sessionTrueCounts[currentIp] = (sessionTrueCounts[currentIp] || 0) + 1;
-
       processPacketInsertion(currentIp);
       poolIndex = (poolIndex + 1) % mockIPPool.length;
     }, 500);
@@ -221,6 +245,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (streamInterval) clearInterval(streamInterval);
   }
 
+  /**
+   * Tính toán sai số mô phỏng dựa trên lượng gói tin vừa bắn ở Tab 1
+   */
   function calculateSessionMetrics() {
     let totalPackets = 0;
     for (const ip in sessionTrueCounts) {
@@ -241,6 +268,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
   }
 
+  /**
+   * Khởi tạo đồ thị thanh nhỏ ở Tab 1
+   */
   function initChartUI() {
     const chartCanvas = document.getElementById("comparisonChart");
     if (!chartCanvas) return;
@@ -275,11 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
         scales: {
           y: {
             beginAtZero: true,
-            title: {
-              display: true,
-              text: "Average Error (Packets)",
-              font: { weight: "bold", size: 12 },
-            },
+            title: { display: true, text: "Average Error (Packets)" },
           },
         },
       },
@@ -293,6 +319,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * Đưa ma trận ban đầu về số 0 nguyên bản
+   */
   function prepopulateVisualizerInitialData() {
     cmsStorage = Array(ROWS)
       .fill()
@@ -301,78 +330,60 @@ document.addEventListener("DOMContentLoaded", () => {
       .fill()
       .map(() => Array(COLS).fill(0));
 
-    cmsStorage = [
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ];
-    ccmsStorage = [
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ];
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const cmsCell = document.getElementById(`cms-cell-${r}-${c}`);
         const ccmsCell = document.getElementById(`ccms-cell-${r}-${c}`);
-        if (cmsCell) cmsCell.innerText = cmsStorage[r][c];
-        if (ccmsCell) ccmsCell.innerText = ccmsStorage[r][c];
+        if (cmsCell) cmsCell.innerText = "0";
+        if (ccmsCell) ccmsCell.innerText = "0";
       }
     }
     updateTotalSummariesCounters();
   }
 
-  // ==========================================
-  // TÍCH HỢP: KHỚP NỐI ĐIỀU HƯỚNG TAB & PIPELINE DATA THỰC TẾ
-  // ==========================================
-
+  // ==========================================================
+  // 💥 ĐIỀU HƯỚNG TAB 2 CHIỀU HOÀN CHỈNH (ĐÃ FIX NÚT QUAY LẠI)
+  // ==========================================================
   function initDatasetNavigation() {
-    // Lắng nghe sự kiện click đổi Dataset (Mock Dataset vs Real-time Input)
-    const mockRadio =
-      document.querySelector('input[value="mock"]') ||
-      document.getElementById("mockRadio");
-    const realRadio =
-      document.querySelector('input[value="real-time"]') ||
-      document.getElementById("realtimeInputRadio");
+    const radioMock = document.getElementById("radioMockData");
+    const radioReal = document.getElementById("radioRealData");
+    const btnBack = document.getElementById("btnBackToVisualizer");
 
-    if (mockRadio) {
-      mockRadio.addEventListener("change", () => switchMainTab("visualizer"));
-    }
-    if (realRadio) {
-      realRadio.addEventListener("change", handleRealTimeDemo);
-    }
-
-    // Lắng nghe sự kiện bấm trực tiếp vào 2 nút chuyển Tab trên thanh điều hướng chính
-    const tabVisualizerBtn =
-      document.querySelector(".btn-visualizer") ||
-      document.getElementById("navTabVisualizer");
-    const tabAnalyticsBtn =
-      document.querySelector(".btn-analytics") ||
-      document.getElementById("navTabAnalytics");
-
-    if (tabVisualizerBtn) {
-      tabVisualizerBtn.addEventListener("click", () => {
-        if (mockRadio) mockRadio.checked = true;
-        switchMainTab("visualizer");
+    // 1. Lắng nghe nút Radio "Data giả lập"
+    if (radioMock) {
+      radioMock.addEventListener("change", () => {
+        if (radioMock.checked) {
+          switchMainTab("visualizer");
+        }
       });
     }
-    if (tabAnalyticsBtn) {
-      tabAnalyticsBtn.addEventListener("click", () => {
-        if (realRadio) realRadio.checked = true;
-        handleRealTimeDemo();
+
+    // 2. Lắng nghe nút Radio "Data thực tế"
+    if (radioReal) {
+      radioReal.addEventListener("change", () => {
+        if (radioReal.checked) {
+          handleRealTimeDemo();
+        }
+      });
+    }
+
+    // 3. Lắng nghe nút bấm "Quay lại Bộ giả lập" từ màn hình đồ thị thật
+    if (btnBack) {
+      btnBack.addEventListener("click", () => {
+        if (radioMock) {
+          radioMock.checked = true; // Thiết lập lại nút Radio ở Tab 1 về chế độ giả lập
+        }
+        switchMainTab("visualizer"); // Lật màn hình hiển thị về bộ giả lập
       });
     }
   }
 
+  /**
+   * Hàm hỗ trợ ẩn/hiện các vùng Containers tương ứng từng Tab
+   */
   function switchMainTab(tabName) {
-    const visualizerView =
-      document.getElementById("visualizerSection") ||
-      document.querySelector(".visualizer-container");
-    const analyticsView =
-      document.getElementById("analyticsSection") ||
-      document.querySelector(".analytics-container");
+    const visualizerView = document.getElementById("visualizerSection");
+    const analyticsView = document.getElementById("analyticsSection");
 
     if (tabName === "visualizer") {
       if (visualizerView) visualizerView.style.display = "block";
@@ -383,6 +394,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * Hàm điều hướng và xử lý đổ dữ liệu thật sang charts.js
+   */
   function handleRealTimeDemo() {
     switchMainTab("analytics");
 
@@ -399,27 +413,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setTimeout(() => {
-      const analyticsPayload =
-        typeof window.TriggerMockDataEngine === "function"
-          ? null
-          : mockRealAnalyticsData;
-
-      if (analyticsPayload) {
-        if (typeof window.renderStatisticalAnalytics === "function") {
-          window.renderStatisticalAnalytics(analyticsPayload);
+      if (typeof mockRealAnalyticsData !== "undefined") {
+        if (typeof renderStatisticalAnalytics === "function") {
+          renderStatisticalAnalytics(mockRealAnalyticsData);
         } else {
           console.error(
-            "Lỗi: Không tìm thấy hàm renderStatisticalAnalytics trong file charts.js!",
+            "Lỗi hệ thống: Không tìm thấy hàm renderStatisticalAnalytics trong file charts.js!",
           );
         }
-      } else if (typeof window.TriggerMockDataEngine === "function") {
-        window.TriggerMockDataEngine("real", "mixed");
       } else {
         if (tableBody) {
           tableBody.innerHTML = `
                         <tr>
                             <td colspan="5" class="text-center text-danger">
-                                Lỗi kết nối: Không tìm thấy dữ liệu analytics. Vui lòng kiểm tra lại file mock_data.js!
+                                Lỗi kết nối dữ liệu: Không tìm thấy biến mockRealAnalyticsData từ mock_data.js!
                             </td>
                         </tr>`;
         }
