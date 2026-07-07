@@ -1,48 +1,111 @@
-from .hash_utils import hash_item
+
+"""
+cms_mixed.py
+
+Mixed Hypergraph Conservative Count-Min Sketch
+
+Theo bài báo:
+- Hot elements dùng k_hot hash functions.
+- Cold elements dùng k_cold hash functions.
+- Chỉ có MỘT bảng counter dùng chung.
+"""
+
+from array import array
+
+from .hash_utils import get_k_distinct_indices
 
 
-class MixedCMS:
+class MixedHypergraphCMS:
+    """
+    Mixed Hypergraph Count-Min Sketch.
 
-    def __init__(self, width: int, min_depth=2, max_depth=5):
+    Hot và Cold dùng số hash function khác nhau nhưng
+    cùng chia sẻ một bảng counter.
+    """
 
-        self.width = width
+    def __init__(
+        self,
+        table_size: int,
+        k_hot: int,
+        k_cold: int,
+        hot_seed_base: int = 0,
+        cold_seed_base: int = 100,
+    ):
+        if table_size < max(k_hot, k_cold):
+            raise ValueError(
+                f"TABLE_TOO_SMALL_FOR_K: table_size ({table_size}) "
+                f"< max(k_hot, k_cold)"
+            )
 
-        self.min_depth = min_depth
+        self.table_size = table_size
 
-        self.max_depth = max_depth
+        self.k_hot = k_hot
+        self.k_cold = k_cold
 
-        self.table = [
-            [0] * width
-            for _ in range(max_depth)
-        ]
+        self.hot_seed_base = hot_seed_base
+        self.cold_seed_base = cold_seed_base
 
-    def update(self, item: str, k: int):
+        # Một bảng counter dùng chung
+        self.table = array("Q", [0] * table_size)
 
-        k = max(self.min_depth, min(k, self.max_depth))
+    def insert(self, item: str, is_hot: bool) -> None:
+        """
+        Conservative Update.
 
-        for i in range(k):
+        Hot dùng k_hot.
+        Cold dùng k_cold.
+        """
 
-            index = hash_item(item, i, self.width)
+        if is_hot:
+            k = self.k_hot
+            seed_base = self.hot_seed_base
+        else:
+            k = self.k_cold
+            seed_base = self.cold_seed_base
 
-            self.table[i][index] += 1
+        indices = get_k_distinct_indices(
+            item=item,
+            k=k,
+            table_size=self.table_size,
+            seed_base=seed_base,
+        )
 
-    def query(self, item: str, k: int):
+        min_value = min(self.table[idx] for idx in indices)
 
-        k = max(self.min_depth, min(k, self.max_depth))
+        for idx in indices:
+            if self.table[idx] == min_value:
+                self.table[idx] += 1
 
-        values = []
+    def query(self, item: str, is_hot: bool) -> int:
+        """
+        Query phải truyền đúng is_hot giống lúc insert.
 
-        for i in range(k):
+        Nếu query sai is_hot thì sẽ dùng sai k và sai tập
+        counter nên kết quả không còn ý nghĩa.
+        """
 
-            index = hash_item(item, i, self.width)
+        if is_hot:
+            k = self.k_hot
+            seed_base = self.hot_seed_base
+        else:
+            k = self.k_cold
+            seed_base = self.cold_seed_base
 
-            values.append(self.table[i][index])
+        indices = get_k_distinct_indices(
+            item=item,
+            k=k,
+            table_size=self.table_size,
+            seed_base=seed_base,
+        )
 
-        return min(values)
+        return min(self.table[idx] for idx in indices)
 
-    def display(self):
+    def memory_bytes(self) -> int:
+        """
+        Bộ nhớ của sketch.
 
-        print()
+        Chỉ có một bảng counter nên không nhân theo k.
+        """
 
-        for row in self.table:
-            print(row)
+        return self.table_size * 8
+
