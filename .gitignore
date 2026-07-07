@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Pytest
+.pytest_cache/
+
+# Data thật — quá lớn cho git (167MB)
+# Tải lại từ Kaggle: https://www.kaggle.com/datasets/shawon10/web-log-dataset
+data_real/*.log
+data_real/*.txt
+data_real/*.json.gz
+
+
+# IDE
+.vscode/
+.idea/
