@@ -1,41 +1,85 @@
-from .hash_utils import hash_item
+
+"""
+cms.py
+
+Conservative Count-Min Sketch (Hypergraph version)
+
+Theo rules.md:
+- Một mảng counter dùng chung.
+- Conservative Update:
+    + Chỉ tăng các ô đang có giá trị nhỏ nhất.
+- Query:
+    + Trả về giá trị nhỏ nhất.
+"""
+
+from array import array
+
+from .hash_utils import get_k_distinct_indices
 
 
-class CountMinSketch:
+class ConservativeCMS:
+    """
+    Conservative Count-Min Sketch sử dụng một bảng counter dùng chung.
+    """
 
-    def __init__(self, width: int, depth: int = 3):
+    def __init__(
+        self,
+        table_size: int,
+        k: int,
+        seed_base: int = 0,
+    ):
+        if table_size < k:
+            raise ValueError(
+                f"TABLE_TOO_SMALL_FOR_K: table_size ({table_size}) < k ({k})"
+            )
 
-        self.width = width
-        self.depth = depth
+        self.table_size = table_size
+        self.k = k
+        self.seed_base = seed_base
 
-        self.table = [
-            [0] * width
-            for _ in range(depth)
-        ]
+        # uint64
+        self.table = array("Q", [0] * table_size)
 
-    def update(self, item: str, count: int = 1):
+    def insert(self, item: str) -> None:
+        """
+        Conservative Update.
 
-        for i in range(self.depth):
+        Chỉ tăng những counter có giá trị nhỏ nhất.
+        """
 
-            index = hash_item(item, i, self.width)
+        indices = get_k_distinct_indices(
+            item=item,
+            k=self.k,
+            table_size=self.table_size,
+            seed_base=self.seed_base,
+        )
 
-            self.table[i][index] += count
+        min_value = min(self.table[idx] for idx in indices)
+
+        for idx in indices:
+            if self.table[idx] == min_value:
+                self.table[idx] += 1
 
     def query(self, item: str) -> int:
+        """
+        Trả về estimate của item.
+        """
 
-        values = []
+        indices = get_k_distinct_indices(
+            item=item,
+            k=self.k,
+            table_size=self.table_size,
+            seed_base=self.seed_base,
+        )
 
-        for i in range(self.depth):
+        return min(self.table[idx] for idx in indices)
 
-            index = hash_item(item, i, self.width)
+    def memory_bytes(self) -> int:
+        """
+        Bộ nhớ sử dụng của bảng counter.
 
-            values.append(self.table[i][index])
+        Chỉ có 1 bảng nên KHÔNG nhân theo k.
+        """
 
-        return min(values)
+        return self.table_size * 8
 
-    def display(self):
-
-        print("\nCurrent Sketch\n")
-
-        for row in self.table:
-            print(row)
