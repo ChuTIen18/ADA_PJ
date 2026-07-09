@@ -8,7 +8,7 @@ function renderTop10Table(containerId, top10Array, options = {}) {
   const rows = (Array.isArray(top10Array) ? top10Array : [])
     .map((item, index) => {
       const isHot = item.is_hot === true || item.is_elephant === true;
-      const typeLabel = isHot ? "Elephant Flow 🐘" : "Mice Flow 🐭";
+      const typeLabel = isHot ? "Elephant Flow " : "Mice Flow ";
       const trueCount = Number(item.true_count ?? 0);
       const estimateCount = Number(item.estimate ?? item.estimate_count ?? 0);
       const mixedEstimate = Number(item.mixed_estimate ?? 0);
