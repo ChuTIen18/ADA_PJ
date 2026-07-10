@@ -1,0 +1,153 @@
+window.MockDataRepository = {
+  synthetic: {
+    results: {
+      classic: {
+        elephant_detected: 3,
+        elephant_total: 5,
+        mice_avg_error: 8.45,
+        top10: [
+          {
+            ip: "192.168.1.1",
+            true_count: 95000,
+            estimate: 96500,
+            is_hot: true,
+          },
+          {
+            ip: "192.168.1.2",
+            true_count: 92000,
+            estimate: 94000,
+            is_hot: true,
+          },
+          {
+            ip: "192.168.1.3",
+            true_count: 88000,
+            estimate: 90000,
+            is_hot: true,
+          },
+          { ip: "10.0.0.101", true_count: 400, estimate: 750, is_hot: false },
+          { ip: "10.0.0.102", true_count: 380, estimate: 620, is_hot: false },
+          { ip: "10.0.0.103", true_count: 350, estimate: 800, is_hot: false },
+          { ip: "10.0.0.104", true_count: 320, estimate: 550, is_hot: false },
+          { ip: "10.0.0.105", true_count: 300, estimate: 600, is_hot: false },
+          { ip: "10.0.0.106", true_count: 280, estimate: 520, is_hot: false },
+          { ip: "10.0.0.107", true_count: 250, estimate: 450, is_hot: false },
+        ],
+      },
+      mixed: {
+        elephant_detected: 5,
+        elephant_total: 5,
+        mice_avg_error: 0.12,
+        top10: [
+          {
+            ip: "192.168.1.1",
+            true_count: 95000,
+            estimate: 95100,
+            is_hot: true,
+          },
+          {
+            ip: "192.168.1.2",
+            true_count: 92000,
+            estimate: 92050,
+            is_hot: true,
+          },
+          {
+            ip: "192.168.1.3",
+            true_count: 88000,
+            estimate: 88200,
+            is_hot: true,
+          },
+          { ip: "10.0.0.101", true_count: 400, estimate: 405, is_hot: false },
+          { ip: "10.0.0.102", true_count: 380, estimate: 382, is_hot: false },
+          { ip: "10.0.0.103", true_count: 350, estimate: 352, is_hot: false },
+          { ip: "10.0.0.104", true_count: 320, estimate: 322, is_hot: false },
+          { ip: "10.0.0.105", true_count: 300, estimate: 305, is_hot: false },
+          { ip: "10.0.0.106", true_count: 280, estimate: 281, is_hot: false },
+          { ip: "10.0.0.107", true_count: 250, estimate: 252, is_hot: false },
+        ],
+      },
+    },
+  },
+  real: {
+    results: {
+      classic: {
+        elephant_detected: 4,
+        elephant_total: 5,
+        mice_avg_error: 12.6,
+        top10: [
+          {
+            ip: "172.16.0.1",
+            true_count: 120000,
+            estimate: 125000,
+            is_hot: true,
+          },
+          {
+            ip: "172.16.0.2",
+            true_count: 115000,
+            estimate: 118000,
+            is_hot: true,
+          },
+          {
+            ip: "172.16.0.3",
+            true_count: 110000,
+            estimate: 112000,
+            is_hot: true,
+          },
+          {
+            ip: "172.16.0.4",
+            true_count: 105000,
+            estimate: 109000,
+            is_hot: true,
+          },
+          {
+            ip: "140.82.112.4",
+            true_count: 500,
+            estimate: 1100,
+            is_hot: false,
+          },
+          { ip: "140.82.112.5", true_count: 480, estimate: 950, is_hot: false },
+          { ip: "140.82.112.6", true_count: 450, estimate: 800, is_hot: false },
+          { ip: "140.82.112.7", true_count: 420, estimate: 780, is_hot: false },
+          { ip: "140.82.112.8", true_count: 400, estimate: 700, is_hot: false },
+          { ip: "140.82.112.9", true_count: 380, estimate: 650, is_hot: false },
+        ],
+      },
+      mixed: {
+        elephant_detected: 5,
+        elephant_total: 5,
+        mice_avg_error: 0.28,
+        top10: [
+          {
+            ip: "172.16.0.1",
+            true_count: 120000,
+            estimate: 120100,
+            is_hot: true,
+          },
+          {
+            ip: "172.16.0.2",
+            true_count: 115000,
+            estimate: 115100,
+            is_hot: true,
+          },
+          {
+            ip: "172.16.0.3",
+            true_count: 110000,
+            estimate: 110050,
+            is_hot: true,
+          },
+          {
+            ip: "172.16.0.4",
+            true_count: 105000,
+            estimate: 105200,
+            is_hot: true,
+          },
+          { ip: "140.82.112.4", true_count: 500, estimate: 505, is_hot: false },
+          { ip: "140.82.112.5", true_count: 480, estimate: 482, is_hot: false },
+          { ip: "140.82.112.6", true_count: 450, estimate: 455, is_hot: false },
+          { ip: "140.82.112.7", true_count: 420, estimate: 422, is_hot: false },
+          { ip: "140.82.112.8", true_count: 400, estimate: 402, is_hot: false },
+          { ip: "140.82.112.9", true_count: 380, estimate: 382, is_hot: false },
+        ],
+      },
+    },
+  },
+};
