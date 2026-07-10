@@ -1,0 +1,16 @@
+# Backend dependencies — elephant-mice-cms-demo
+# Xem rules.md §8 cho lý do chọn từng thư viện.
+
+# Web framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pydantic>=2.0.0
+
+# Hashing — MurmurHash3, nhanh, có seed (rules.md §8)
+mmh3>=4.0.0
+
+# Test
+pytest>=7.0.0
+
+# Data (không dùng numpy cho module lõi — chỉ dùng stdlib)
+# numpy có thể thêm sau nếu cần cho run_full_experiments.py
