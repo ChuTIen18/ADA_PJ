@@ -47,6 +47,8 @@ Trạng thái ký hiệu dùng thống nhất: 🔲 Chưa bắt đầu · 🟡 �
 | `charts.js` | 3 hàm render đúng chữ ký ở `ai_agents.md` | 🔲 | |
 | — | Đã chạy được hoàn chỉnh bằng `mock_data.js` trước khi có backend thật | 🔲 | |
 | — | Đã swap sang `api.js` thật, test lại toàn luồng | 🔲 | |
+| `data/mock/sample_response.json` | Khớp cấu trúc `mock_data.js` với response mẫu | 🔲 | |
+| `frontend/js/mock_data.js` | Mock data frontend đúng schema, dùng khi backend chưa sẵn sàng | 🔲 | |
 
 ### [C] Kết nối Backend–Frontend (Hiếu)
 
@@ -59,24 +61,26 @@ Trạng thái ký hiệu dùng thống nhất: 🔲 Chưa bắt đầu · 🟡 �
 | `README.md` | Người mới clone chạy được backend+frontend trong < 5 phút | 🔲 | |
 | `requirements.txt`, `Dockerfile` | Cài đặt chạy được từ đầu | 🔲 | |
 
-### [D] Data + hỗ trợ Backend (Tiên)
+### [D] Data giả lập + hỗ trợ Backend (Tiên)
 
 | File | Tiêu chí đạt | Trạng thái | Ghi chú |
 |---|---|---|---|
 | `data_generator.py` | Generator (không load hết RAM); cùng seed → cùng stream; tỉ lệ hot/cold khớp `ph`/`pc` lý thuyết trong sai số chấp nhận được | 🔲 | |
-| `real_loader.py` | Parse đúng regex `rules.md §5`; có cache; log số dòng skip | ✅ | 2026-07-07. Hoàn thành 3 hàm public + 1 generator `build_real_stream`. Parse đúng regex rules.md. Cache JSON lưu tại `data_real/processed_cache.json` kèm stats. |
 | `presets.py` | Khớp chính xác số liệu `project_ovr.md §7` | 🔲 | |
 | `simulation_service.py` (đồng sở hữu A+D) | Consume stream 1 lần duy nhất cho cả 2 sketch; `true_count` từ đếm thật, không suy lý thuyết | 🔲 | File dễ conflict nhất — 2 người phải trao đổi trực tiếp trước khi code (`ai_agents.md`) |
 | `test_data_generator.py` | Pass 100% | 🔲 | |
-| `test_real_loader.py` | Pass 100% | ✅ | 2026-07-07. 34/34 passed (7.56s). Đã chỉnh path trỏ đến log thô ngoài repo. |
 | `data_real/backend/scripts/run_full_experiments.py` | Quét đủ tham số, `total_packets=10,000,000`, xuất số liệu thay placeholder trong `Kịch bản DEMO` | 🔲 | Mốc cuối timeline (`project_ovr.md §9`) |
 
-### [E] Data + hỗ trợ Frontend / Mock (Thịnh)
+### [E] Data thực + hỗ trợ Frontend / Mock (Thịnh)
 
 | File | Tiêu chí đạt | Trạng thái | Ghi chú |
 |---|---|---|---|
-| `mock_data.js` | Đúng 100% schema `rules.md §3.4`; số liệu hợp lý (không mâu thuẫn logic) | 🔲 | |
-| `sample_response.json` | Khớp cấu trúc `mock_data.js` | 🔲 | |
+| `real_loader.py` | Parse đúng regex `rules.md §5`; có cache; log số dòng skip | ✅ | 2026-07-07. Hoàn thành 3 hàm public + 1 generator `build_real_stream`. Parse đúng regex rules.md. Cache JSON lưu tại `data_real/processed_cache.json` kèm stats. |
+| `data_real/backend/scripts/download_kaggle_nasa.py` | Tải dataset NASA từ Kaggle, đặt đúng file `nasa_access_log.txt` | 🔲 | |
+| `data_real/backend/scripts/build_real_cache.py` | Xây cache từ file log thực để backend dùng lại, ghi stats rõ ràng | 🔲 | |
+| `data_real/backend/tests/test_real_loader.py` | Pass 100% | ✅ | 2026-07-07. 34/34 passed (7.56s). |
+| `data_real/huongdan_keo_data_access_log.md` | Ghi lại pipeline kéo/tiền xử lý data thật | 🔲 | |
+| `data_real/processed_cache.json` | Cache JSON cho dữ liệu thật (đã tồn tại) | ✅ | 2026-07-07 (~1.9MB)
 
 ---
 

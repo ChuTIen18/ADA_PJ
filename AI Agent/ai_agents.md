@@ -29,99 +29,87 @@ def get_k_distinct_indices(item: str, k: int, table_size: int, seed_base: int = 
 Dùng `mmh3.hash(item, seed=seed) % table_size`.
 
 ### `cms.py`
+---
+
+## [D] Tiên — Data giả lập + hỗ trợ Backend
+
+### Nhiệm vụ
+Sinh dữ liệu giả lập đúng mô hình Step distribution (Section 3.2), định nghĩa preset, và ráp cùng A vào `simulation_service.py` để backend chạy cả classic và mixed trên cùng một stream.
+
+### File sở hữu
+`data_real/backend/app/data/data_generator.py`, `data_real/backend/app/data/presets.py`, `data_real/backend/app/services/simulation_service.py` (đồng sở hữu với A), `data_real/backend/tests/test_data_generator.py`, `data_real/backend/scripts/run_full_experiments.py`
+
+### `data_generator.py`
 ```python
-class ConservativeCMS:
-    def __init__(self, table_size: int, k: int, seed_base: int = 0): ...
-    def insert(self, item: str) -> None:
-        """Tăng CHỈ ô nhỏ nhất trong k ô gán cho item (nếu nhiều ô cùng bằng min, tăng tất cả các ô đang bằng min đó — đúng định nghĩa conservative update)."""
-    def query(self, item: str) -> int:
-        """Trả về min(k ô gán cho item)."""
-    def memory_bytes(self) -> int:
-        """table_size * 8 (counter kiểu uint64/Python int trong mảng array('Q', ...) hoặc numpy uint64). KHÔNG nhân theo k."""
+def generate_step_distribution(n_hot: int, n_cold: int, gap_factor: float,
+                                total_packets: int, seed: int | None = None):
+    """
+    Generator (yield từng packet {"ip": str, "is_hot": bool}) theo đúng Step
+    distribution Section 3.2: ph/pc = gap_factor * (n_hot/n_cold);
+    ph = gap_factor*n_hot / (n_cold + gap_factor*n_hot);  # suy ra từ ph/pc và ph+pc=1
+    pc = n_cold / (n_cold + gap_factor*n_hot)
+    Mỗi packet: với xác suất ph rơi vào nhóm hot (chọn đều 1 trong n_hot hot-ip),
+    ngược lại rơi vào nhóm cold (chọn đều 1 trong n_cold cold-ip).
+    PHẢI dùng yield — không dựng list total_packets phần tử trong RAM.
+    """
+
+def build_ground_truth(stream_records: list[dict]) -> list[dict]:
+    """Nhận list đã VẬT CHẤT HOÁ (hoặc consume generator 1 lần, lưu lại) →
+    đếm true_count thật bằng Counter theo ip → trả [{"ip", "true_count", "is_hot"}].
+    KHÔNG suy true_count từ ph/pc lý thuyết (xem rules.md §4.2)."""
 ```
+Lưu ý triển khai: vì cần vừa insert vào CMS vừa đếm true_count, nên trong `simulation_service.py`, consume generator **một lần duy nhất**, vừa insert vào cả 2 sketch (classic + mixed) vừa cập nhật Counter cho true_count — tránh sinh stream 2 lần (tốn thời gian + có thể ra 2 stream khác nhau nếu quên seed).
 
-### `cms_mixed.py`
-```python
-class MixedHypergraphCMS:
-    def __init__(self, table_size: int, k_hot: int, k_cold: int,
-                 hot_seed_base: int = 0, cold_seed_base: int = 100): ...
-    def insert(self, item: str, is_hot: bool) -> None: ...
-    def query(self, item: str, is_hot: bool) -> int:
-        """QUAN TRỌNG: phải truyền đúng is_hot lúc query giống lúc insert,
-        vì k (và do đó tập ô được gán) khác nhau giữa hot/cold. Query sai
-        is_hot -> query nhầm k, ra kết quả vô nghĩa."""
-```
-`hot_seed_base`/`cold_seed_base` mặc định lệch nhau (0 vs 100) để tránh 2 nhóm dùng trùng dải seed — xem `rules.md §4.1`.
-
-### `metrics.py`
-```python
-def relative_error(estimate: int, true_count: int) -> float | None:
-    """(estimate-true_count)/true_count. Trả None nếu true_count == 0 (loại khỏi thống kê trung bình, không raise exception làm sập cả run)."""
-
-def average_error(records: list[dict], only_hot: bool | None) -> float:
-    """only_hot=True: chỉ tính trên record có is_hot=True.
-    only_hot=False: chỉ tính is_hot=False (đây là 'mice_avg_error' trong response).
-    only_hot=None: tính tất cả. Bỏ qua record có relative_error=None."""
-
-def elephant_detection_rate(all_records_with_estimate: list[dict], top_n: int) -> tuple[int, int]:
-    """Sort giảm dần theo estimate, lấy top_n, đếm bao nhiêu trong đó thực sự is_hot=True.
-    Trả (số đúng, top_n) = (elephant_detected, elephant_total)."""
-```
+### `presets.py`
+3 preset hằng số đúng theo `rules.md §3.3` (`main`, `paper_faithful`, `stress`) — xem giá trị cụ thể + lý do từng preset ở `project_ovr.md §7`. Không tự đổi số mà không cập nhật cả 2 file.
 
 ### Edge case phải xử lý
-- `table_size` nhỏ hơn k → raise lỗi rõ ràng, để C map sang `TABLE_TOO_SMALL_FOR_K` (rules.md §3.5), không để lỗi generic.
-- `true_count = 0` (phần tử có trong danh sách nhưng chưa từng xuất hiện trong stream do random) → không chia cho 0.
-- Nhiều ô cùng giá trị min khi insert → tăng **tất cả** ô đang = min (đúng conservative update, không chỉ tăng 1 ô ngẫu nhiên trong số đó).
-- 10 triệu packet: tránh tạo object Python nặng trong vòng lặp insert (không dùng list/dict lồng nhau mỗi lần insert) — dùng cấu trúc mảng phẳng (`array` module hoặc `numpy`).
+- `hot_threshold_percent` quá nhỏ (0 host nào được chọn) hoặc quá lớn (gần hết là hot) → validate + trả lỗi rõ ràng thay vì chạy ra kết quả vô nghĩa.
 
 ### Checklist Done
-- [ ] `pytest data_real/backend/tests/test_cms.py test_cms_mixed.py` pass 100%
-- [ ] Có test riêng xác nhận conservative update chỉ tăng min-ô (không tăng hết k ô)
-- [ ] Có test xác nhận Mixed dùng đúng k_hot khi is_hot=True và k_cold khi is_hot=False
-- [ ] Có test `memory_bytes()` trả đúng `table_size * 8`, không phụ thuộc k
-- [ ] Benchmark thời gian insert 500,000 packet < ~3 giây (ghi số đo thật vào PR)
+- [ ] `generate_step_distribution` cho cùng seed → cho ra đúng cùng 1 stream ở 2 lần gọi khác nhau (test reproducibility)
+- [ ] Tỉ lệ hot/cold thực tế sinh ra khớp `ph`/`pc` lý thuyết trong sai số chấp nhận được (test với số lượng packet đủ lớn)
+- [ ] Cache hoạt động đúng (lần 2 gọi nhanh hơn hẳn lần 1)
+- [ ] `presets.py` khớp chính xác `project_ovr.md §7`
 
 ### Phụ thuộc / ảnh hưởng
-- D (Tiên) gọi trực tiếp `ConservativeCMS`/`MixedHypergraphCMS` trong `simulation_service.py` — đổi signature phải báo D+C ngay.
-- Không phụ thuộc ai để bắt đầu — có thể code + test độc lập với `pytest` thuần, không cần chờ FastAPI (đúng như kế hoạch cũ).
+- Dùng trực tiếp class từ A (`cms.py`/`cms_mixed.py`) trong `simulation_service.py` — 2 người (A+D, cùng C khi ráp `main.py`) nên trao đổi trực tiếp trước khi viết `simulation_service.py`, đây là file dễ conflict nhất khi merge.
 
 ---
 
-## [B] Mai — Frontend
+## [E] Thịnh — Data thực + hỗ trợ Backend
 
 ### Nhiệm vụ
-Dựng giao diện web tĩnh (không framework, không build step) thể hiện đúng luồng trong `Kịch bản DEMO`: 2 nút chọn nguồn data → chạy classic → chạy mixed → tab so sánh.
+Kéo và tiền xử lý dữ liệu thực tế (NASA HTTP logs), xây cache, và cung cấp loader/labeler cho backend. Chịu trách nhiệm scripts tải dữ liệu, xây cache, và các test đi kèm.
 
 ### File sở hữu
-`frontend/index.html`, `frontend/css/style.css`, `frontend/js/app.js`, `frontend/js/charts.js`
+`data_real/backend/app/data/real_loader.py`, `data_real/backend/scripts/download_kaggle_nasa.py`, `data_real/backend/scripts/build_real_cache.py`, `data_real/data_real/processed_cache.json`, `data_real/backend/tests/test_real_loader.py`
 
-### `app.js`
-```javascript
-let lastResponse = null; // cache kết quả /api/simulate gần nhất, tránh gọi lại API khi chỉ chuyển tab hiển thị
+### `real_loader.py`
+```python
+import re
+NASA_LOG_PATTERN = re.compile(r'^(\S+) \S+ \S+ \[([^\]]+)\] "([^\"]*)" (\d{3}) (\S+)$')
 
-async function runSimulation(dataSource, params) {
-  // Gọi api.js (do C viết) — 1 LẦN duy nhất cho cả classic+mixed (xem rules.md §3.4)
-  // Lưu vào lastResponse, KHÔNG gọi lại API khi user bấm nút "Run mixed" ngay sau "Run classic"
-}
+def parse_nasa_log_line(line: str) -> str | None:
+    """Trả về host (group 1) nếu khớp pattern, None nếu không (dòng lỗi)."""
 
-function showClassicPanel() {
-  // Đọc từ lastResponse.results.classic, gọi charts.js
-}
+def load_and_aggregate(filepath: str, cache_path: str) -> dict[str, int]:
+    """Nếu cache_path đã tồn tại → đọc cache, trả luôn (không parse lại).
+    Nếu chưa → đọc từng dòng filepath, parse, đếm {host: count}, đếm số dòng
+    skip (log lại số này), ghi ra cache_path (JSON), rồi trả kết quả."""
 
-function showMixedPanel() {
-  // Đọc từ lastResponse.results.mixed, gọi charts.js
-}
-
-function showComparisonTab() {
-  // Join top10 của classic và mixed theo `ip` (cùng thứ tự vì cùng seed), vẽ 2 cột song song
-}
+def label_hot_cold(counts: dict[str, int], hot_threshold_percent: float) -> list[dict]:
+    """Sort giảm dần theo count. Top hot_threshold_percent% đầu -> is_hot=True.
+    Trả [{"ip": host, "true_count": count, "is_hot": bool}, ...]."""
 ```
 
-### `charts.js`
-```javascript
-function renderErrorBarChart(canvasId, classicMiceError, mixedMiceError) { /* Chart.js bar chart */ }
-function renderDetectionBarChart(canvasId, classicDetected, classicTotal, mixedDetected, mixedTotal) { }
-function renderTop10Table(containerId, top10Array, options = {}) { }
+### Checklist Done
+- [ ] `real_loader` chạy được trên file NASA log thật đã tải, in ra được số dòng skip
+- [ ] Cache hoạt động đúng (lần 2 gọi nhanh hơn hẳn lần 1)
+
+### Phụ thuộc / ảnh hưởng
+- Nếu đổi `hot_threshold_percent` hoặc format cache → báo C (API schema) và B (nếu mock sử dụng cache) ngay lập tức.
+
 ```
 
 ### Lưu ý UI (theo đúng `Kịch bản DEMO`)
@@ -225,13 +213,13 @@ B chỉ gọi `callSimulate()`/`fetchPresets()`, không tự viết `fetch()` tr
 
 ---
 
-## [D] Tiên — Data + hỗ trợ Backend
+## [D] Tiên — Data giả lập + hỗ trợ Backend
 
 ### Nhiệm vụ
-Sinh dữ liệu giả lập đúng mô hình Step distribution (Section 3.2), nạp + tiền xử lý dữ liệu thật (NASA logs), và ráp cùng A vào `simulation_service.py`.
+Sinh dữ liệu giả lập đúng mô hình Step distribution (Section 3.2), định nghĩa preset, và ráp cùng A vào `simulation_service.py` để backend chạy cả classic và mixed trên cùng một stream.
 
 ### File sở hữu
-`data_real/backend/app/data/data_generator.py`, `real_loader.py`, `presets.py`, `data_real/backend/app/services/simulation_service.py` (đồng sở hữu với A), `data_real/backend/tests/test_data_generator.py`, `test_real_loader.py`
+`data_real/backend/app/data/data_generator.py`, `data_real/backend/app/data/presets.py`, `data_real/backend/app/services/simulation_service.py` (đồng sở hữu với A), `data_real/backend/tests/test_data_generator.py`, `data_real/backend/scripts/run_full_experiments.py`
 
 ### `data_generator.py`
 ```python
